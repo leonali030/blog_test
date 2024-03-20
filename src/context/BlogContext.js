@@ -1,16 +1,15 @@
 import CreateDataContext from "./CreateDataContext";
+import jsonServer from "../api/jsonServer";
 
 
 const blogReducer = (state, action) => {
     switch (action.type) {
+        case 'get_blogpost':
+            return action.payload
         case 'delete_blogpost':
             console.log('inside blogReducer_delete_blogpost')
             return state.filter((blogPost)=>blogPost.id!==action.payload);
-        case 'add_blogpost':
-            return [...state, {
-                id: Math.floor(Math.random()* 9999), 
-                title: action.payload.title,
-            content: action.payload.content}];
+       
         case 'edit_blogpost':
             return state.map((blogPost)=>{
                 if (blogPost.id===action.payload.id){
@@ -24,24 +23,33 @@ const blogReducer = (state, action) => {
 
 
 }
-const addBlogPost = dispatch=>{
-    return (title, content, callback) => {
+const getBlogPost = dispatch =>{
+    return async () =>{
+        const response = await jsonServer.get('/blogpost')
+        dispatch({type:'get_blogpost', payload: response.data})
+    }
+}
 
-        dispatch({type: 'add_blogpost', payload: {title, content}});
-        if (callback) {
+const addBlogPost = dispatch=>{
+    return async (title, content, callback) => {
+        await jsonServer.post('/blogpost',{title, content})
+            if (callback) {
             callback();
         }
         
     }
 };
+
 const deteleBlogPost = dispatch=>{
-    return id => {
-        console.log('inside deteleBlogPost')
+    return async id => {
+        await jsonServer.delete(`/blogpost/${id}`);
+        // console.log('inside deteleBlogPost')
         dispatch({type: 'detele_blogpost', payload: id});
     }
 };
 const editBlogPost = dispatch=>{
-    return (id, title, content, callback) => {
+    return async (id, title, content, callback) => {
+        await jsonServer.put(`/blogpost/${id}`, {title, content})
         dispatch({type: 'edit_blogpost', payload: {id, title,content}})
         if (callback) {
             callback();
@@ -50,5 +58,5 @@ const editBlogPost = dispatch=>{
 }
 export const {Context, Provider} = CreateDataContext(
     blogReducer, 
-    {addBlogPost, deteleBlogPost, editBlogPost},
-    [{title:'test post', content: 'test content', id: 1}])
+    {addBlogPost, deteleBlogPost, editBlogPost, getBlogPost},
+    [])
